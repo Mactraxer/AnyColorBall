@@ -4,11 +4,18 @@ using UnityEngine;
 class KeyboardInputService : MonoBehaviour, IInputService
 {
     public event Action<float> OnChangeHorizontalInput;
+    public event Action OnTapUpButton;
+
+
     public event Action OnTapDownLeftButton;
     public event Action OnTapUpLeftButton;
     public event Action OnTapDownRightButton;
     public event Action OnTapUpRightButton;
-    public event Action OnTapUpButton;
+
+    private void Awake()
+    {
+        DontDestroyOnLoad(this);
+    }
 
     private void Update()
     {

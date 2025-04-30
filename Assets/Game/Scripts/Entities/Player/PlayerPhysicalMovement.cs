@@ -2,7 +2,6 @@ using UnityEngine;
 
 public class PlayerPhysicalMovement : MonoBehaviour
 {
-    [SerializeField] private KeyboardInputService _inputService;
     [SerializeField] private Rigidbody2D _rigidbody2D;
     [SerializeField] private float _jumpForce;
     [SerializeField] private float _moveForce;
@@ -17,14 +16,14 @@ public class PlayerPhysicalMovement : MonoBehaviour
 
     private void Start()
     {
-        _inputService.OnChangeHorizontalInput += OnChangeMoveControll;
-        _inputService.OnTapUpButton += OnStartJump;
+        Game.InputService.OnChangeHorizontalInput += OnChangeMoveControll;
+        Game.InputService.OnTapUpButton += OnStartJump;
     }
 
     private void OnDestroy()
     {
-        _inputService.OnChangeHorizontalInput -= OnChangeMoveControll;
-        _inputService.OnTapUpButton -= OnStartJump;
+        Game.InputService.OnChangeHorizontalInput -= OnChangeMoveControll;
+        Game.InputService.OnTapUpButton -= OnStartJump;
     }
 
     private void FixedUpdate()
