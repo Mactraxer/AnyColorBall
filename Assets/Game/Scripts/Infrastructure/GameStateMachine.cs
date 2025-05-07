@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AnyColorBall.Services.Data;
+using System;
 using System.Collections.Generic;
 
 namespace AnyColorBall.Infrastructure
@@ -8,12 +9,13 @@ namespace AnyColorBall.Infrastructure
         private Dictionary<Type, IExitableState> _states;
         private IExitableState _activeState;
 
-        public GameStateMachine(SceneLoader sceneLoader, LoadingUI loadingUI)
+        public GameStateMachine(SceneLoader sceneLoader, LoadingUI loadingUI, IInputService inputService, AllServices services)
         {
             _states = new Dictionary<Type, IExitableState>()
             {
-                [typeof(BootstrapState)] = new BootstrapState(this, sceneLoader),
-                [typeof(LoadLevelState)] = new LoadLevelState(this, sceneLoader, loadingUI),
+                [typeof(BootstrapState)] = new BootstrapState(this, sceneLoader, inputService, services),
+                [typeof(LoadProgressState)] = new LoadProgressState(this, services.Single<IPersistentProgressService>(), services.Single<ISaveLoadService>()),
+                [typeof(LoadLevelState)] = new LoadLevelState(this, sceneLoader, loadingUI, services.Single<IGameFactory>(), services.Single<IPersistentProgressService>()),
                 [typeof(GameLoopState)] = new GameLoopState(this),
             };
         }

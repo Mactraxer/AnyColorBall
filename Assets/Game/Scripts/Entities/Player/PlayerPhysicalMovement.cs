@@ -1,6 +1,9 @@
+using AnyColorBall.Infrastructure;
+using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-public class PlayerPhysicalMovement : MonoBehaviour
+public class PlayerPhysicalMovement : MonoBehaviour, ISavedPlayerProgress
 {
     [SerializeField] private Rigidbody2D _rigidbody2D;
     [SerializeField] private float _jumpForce;
@@ -14,16 +17,40 @@ public class PlayerPhysicalMovement : MonoBehaviour
     private float _moveDelta;
     private bool _isGrounded;
 
+    private IInputService _inputService;
+
+    public void UpdateProgress(PlayerProgress progress)
+    {
+        if (progress.WorldData.PositionOnLevel.Level == CurrentLevel())
+        {
+            progress.WorldData.PositionOnLevel.Vector3Data = _rigidbody2D.position.AsVectorData();
+        }
+    }
+
+    public void ReadProgress(PlayerProgress progress)
+    {
+        if (progress.WorldData.PositionOnLevel.Level == CurrentLevel())
+        {
+            _rigidbody2D.Sleep();
+            _rigidbody2D.position = progress.WorldData.PositionOnLevel.Vector3Data.AsUnityVector();
+        }
+    }
+
+    private void Awake()
+    {
+        _inputService = AllServices.Container.Single<IInputService>();
+    }
+
     private void Start()
     {
-        Game.InputService.OnChangeHorizontalInput += OnChangeMoveControll;
-        Game.InputService.OnTapUpButton += OnStartJump;
+        _inputService.OnChangeHorizontalInput += OnChangeMoveControll;
+        _inputService.OnTapUpButton += OnStartJump;
     }
 
     private void OnDestroy()
     {
-        Game.InputService.OnChangeHorizontalInput -= OnChangeMoveControll;
-        Game.InputService.OnTapUpButton -= OnStartJump;
+        _inputService.OnChangeHorizontalInput -= OnChangeMoveControll;
+        _inputService.OnTapUpButton -= OnStartJump;
     }
 
     private void FixedUpdate()
@@ -65,5 +92,10 @@ public class PlayerPhysicalMovement : MonoBehaviour
         {
             _rigidbody2D.AddForce(Vector3.up * _jumpForce, ForceMode2D.Impulse);
         }
+    }
+
+    private string CurrentLevel()
+    {
+        return SceneManager.GetActiveScene().name;
     }
 }

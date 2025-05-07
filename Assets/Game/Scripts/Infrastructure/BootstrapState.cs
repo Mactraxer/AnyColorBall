@@ -1,23 +1,27 @@
-﻿namespace AnyColorBall.Infrastructure
+﻿using AnyColorBall.Services.Data;
+using System;
+
+namespace AnyColorBall.Infrastructure
 {
     public class BootstrapState : IState
     {
         private const string InitialSceneName = "Initial";
-        private const string GameSceneName = "Game";
 
         private readonly GameStateMachine _stateMachine;
         private readonly SceneLoader _sceneLoader;
+        private readonly AllServices _services;
 
-        public BootstrapState(GameStateMachine stateMachine, SceneLoader sceneLoader)
+        public BootstrapState(GameStateMachine stateMachine, SceneLoader sceneLoader, IInputService inputService, AllServices services)
         {
             _stateMachine = stateMachine;
             _sceneLoader = sceneLoader;
+            _services = services;
+            RegisterServices(inputService);
         }
 
         public void Enter()
         {
-            RegisterServices();
-            _sceneLoader.LoadScene(InitialSceneName, EnterLoadLevel);
+            _sceneLoader.LoadScene(InitialSceneName, EnterLoadProgress);
         }
 
         public void Exit()
@@ -25,14 +29,18 @@
 
         }
 
-        private void RegisterServices()
+        private void RegisterServices(IInputService inputService)
         {
-            
+            _services.RegisterSingle<IInputService>(inputService);
+            _services.RegisterSingle<IAssetProvider>(new AssetProvider());
+            _services.RegisterSingle<IPersistentProgressService>(new PersistentProgressService());
+            _services.RegisterSingle<IGameFactory>(new GameFactory(_services.Single<IAssetProvider>()));
+            _services.RegisterSingle<ISaveLoadService>(new SaveLoadService(_services.Single<IGameFactory>(), _services.Single<IPersistentProgressService>()));
         }
 
-        private void EnterLoadLevel()
+        private void EnterLoadProgress()
         {
-            _stateMachine.Enter<LoadLevelState, string>(GameSceneName);
+            _stateMachine.Enter<LoadProgressState>();
         }
     }
 }

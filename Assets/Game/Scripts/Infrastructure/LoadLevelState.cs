@@ -1,22 +1,26 @@
-﻿using UnityEngine;
+﻿using AnyColorBall.Services.Data;
+using System;
+using UnityEngine;
 
 namespace AnyColorBall.Infrastructure
 {
     public class LoadLevelState : IPayloadableState<string>
     {
-        private const string LevelDemoPath = "Levels/LevelDemo";
-        private const string PlayerPath = "Player/Player";
         private const string InitialPointTag = "InitialPoint";
 
         private readonly GameStateMachine _stateMachine;
         private readonly SceneLoader _sceneLoader;
         private readonly LoadingUI _loadingUI;
+        private readonly IGameFactory _gameFactory;
+        private readonly IPersistentProgressService _progressService;
 
-        public LoadLevelState(GameStateMachine stateMachine, SceneLoader sceneLoader, LoadingUI loadingUI)
+        public LoadLevelState(GameStateMachine stateMachine, SceneLoader sceneLoader, LoadingUI loadingUI, IGameFactory gameFactory, IPersistentProgressService progressService)
         {
             _stateMachine = stateMachine;
             _sceneLoader = sceneLoader;
             _loadingUI = loadingUI;
+            _gameFactory = gameFactory;
+            _progressService = progressService;
         }
 
         public void Enter(string payload)
@@ -32,25 +36,28 @@ namespace AnyColorBall.Infrastructure
 
         private void OnLoaded()
         {
-            Instantiate(LevelDemoPath);
-
-            var playerInitialPoint = GameObject.FindGameObjectWithTag(InitialPointTag);
-            var player = Instantiate(PlayerPath, playerInitialPoint.transform.position);
-            CameraFollow(player);
+            CreateGameWorld();
+            InformProgressReaders();
 
             _stateMachine.Enter<GameLoopState>();
         }
 
-        private GameObject Instantiate(string path, Vector3 position)
+        private void InformProgressReaders()
         {
-            var prefab = Resources.Load<GameObject>(path);
-            return Object.Instantiate(prefab, position, Quaternion.identity);
+            foreach (IReadablePlayerProgress reader in _gameFactory.ProgressReaders)
+            {
+                reader.ReadProgress(_progressService.Progress);
+            }
         }
 
-        private static GameObject Instantiate(string path)
+        private void CreateGameWorld()
         {
-            var prefab = Resources.Load<GameObject>(path);
-            return Object.Instantiate(prefab);
+            _gameFactory.CreateLevel();
+
+            var playerInitialPoint = GameObject.FindGameObjectWithTag(InitialPointTag);
+            var player = _gameFactory.CreatePlayer(playerInitialPoint.transform.position);
+
+            CameraFollow(player);
         }
 
         private static void CameraFollow(GameObject player)
